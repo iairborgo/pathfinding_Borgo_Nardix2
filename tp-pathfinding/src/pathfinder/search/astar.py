@@ -2,6 +2,7 @@ from ..models.grid import Grid
 from ..models.frontier import PriorityQueueFrontier
 from ..models.solution import NoSolution, Solution
 from ..models.node import Node
+from ..models.HeuristicCost import HeuristicCost
 
 
 class AStarSearch:
@@ -24,4 +25,17 @@ class AStarSearch:
         # Add the node to the explored dictionary
         explored[node.state] = True
         
+        frontier = PriorityQueueFrontier()
+        frontier.add(node, HeuristicCost(grid, node)) # aca no agrego pq asumo costo 0 inicial
+
+        while frontier: # Mientras haya  nodos en la frontera
+            node = frontier.pop()
+            if grid.end == node.state: return Solution(node, explored)
+            for accion, vecino in grid.get_neighbours(node.state).items():
+                costo_total = node.cost + grid.get_cost(vecino)
+                if vecino not in explored or costo_total < explored[vecino]:
+                    new_node = Node("", vecino, costo_total, node, accion)
+                    explored[vecino] = costo_total
+                    frontier.add(new_node, priority = HeuristicCost(grid,new_node) + grid.get_cost(vecino))
+
         return NoSolution(explored)
