@@ -92,10 +92,49 @@ class HillClimbing(LocalSearch):
 
 
 class HillClimbingReset(LocalSearch):
-    """Algoritmo de ascension de colinas con reinicio aleatorio."""
+    """Clase que representa un algoritmo de ascension de colinas con reinicio aleatorio.
 
-    # COMPLETAR
+    En cada iteracion se mueve al estado sucesor con mejor valor objetivo.
+    El criterio de parada es alcanzar un optimo local. Una vez alcanzado, se reinicia
+    con un estado aleatorio hasta alcanzar las n iteraciones y retorna la mejor.
+    """
+    def solve(self, problem: OptProblem, iters : int = 10):
+        start = time()  # inicia el contador
 
+        i = 0
+
+        while i < iters: # Iniciamos aleatoriamente n veces
+            actual = problem.random_reset()
+            value = problem.obj_val(actual)
+            
+            while True:
+                diff = problem.val_diff(actual) # Determinamos las acciones y sus costos
+                # y agarramos las que nos dan mayor valor objetivo
+                max_acts = [act for act, val in diff.items() if val == max(diff.values())]
+
+                act = choice(max_acts) # Elige una aleatoria entre las anteriores
+
+                if diff[act] <= 0: # si no hay mejor movimiento para hacer:
+                    i += 1
+                    # int < None da typeerror
+                    if self.value == None: # si todavia no hay ninguno guardado lo guardamos
+                        self.tour = actual
+                        self.value = value
+                    elif self.value < value: # o guardamos el nuevo camino si tiene mejor costo
+                        self.tour = actual   # que el anterior que teniamos
+                        self.value = value
+                    break # rompemos el while true ya que encontramos la sol de la iteracion
+                else:
+                    actual = problem.result(actual, act)
+                    value = value + diff[act]
+                    self.niters += 1                      
+                    
+                
+        end = time()
+        self.time = end-start
+        return
+
+ 
 
 class Tabu(LocalSearch):
     """Algoritmo de busqueda tabu."""
