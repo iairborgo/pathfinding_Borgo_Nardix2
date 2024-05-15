@@ -155,7 +155,9 @@ class Tabu(LocalSearch):
 
         lista_tabu = []
 
-        while self.niters < 50: # Elijo máximo de iteraciones como criterio de parada
+        iter = 0 # Defino un iterador para contar y resetear en while
+
+        while iter < 500: # Elijo máximo de iteraciones como criterio de parada
 
             # Determinar las acciones que se pueden aplicar
             # y las diferencias en valor objetivo que resultan
@@ -165,31 +167,34 @@ class Tabu(LocalSearch):
 
             # Buscar las acciones que generan el mayor incremento de valor obj Y NO ESTEN EN LISTA TABU
             max_acts = [act for act, val in diff.items() if val == max_diff and act not in lista_tabu] 
-            
+                
             if not max_acts:
                 max_acts = [act for act, val in diff.items() if val == max_diff]    # Si no hay acciones que mejoren el Valor Objetivo
-            
+                
             act = max_acts[0] # Siempre la primera accion de max_acts (mejor valor obj que no esté en tabu)
 
+            if problem.obj_val(mejor) < problem.obj_val(actual): # Si el actual es mejor que el mejor lo actualizamos
+                mejor = actual
+                iter = 0 # Reset de contador
+
+            lista_tabu.append(act) # Actualizo lista tabu
+
+            if len(lista_tabu) > 20: # Limite de tamaño de lista tabu
+                lista_tabu.pop(0)
+        
             # Retornar si estamos en un optimo local 
             # (diferencia de valor objetivo no positiva)
             if max_diff <= 0:
-                end = time()
-                self.time = end - start
                 self.tour = actual
                 self.value = value
+                end = time()
+                self.time = end - start
                 return
-            
+                
             # Sino, nos movemos al sucesor
             else:
                 actual = problem.result(actual, act)
                 value = value + diff[act]
                 self.niters += 1
-
-            if problem.obj_val(mejor) < problem.obj_val(actual): # Si el actual es mejor que el mejor lo actualizamos
-                mejor = actual
-
-            lista_tabu.append(act) # Actualizo lista tabu
-
-            if len(lista_tabu) > 10: # Limite de tamaño de lista tabu
-                lista_tabu.pop(0)
+        
+        return
