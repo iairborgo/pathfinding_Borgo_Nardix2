@@ -139,4 +139,60 @@ class HillClimbingReset(LocalSearch):
 class Tabu(LocalSearch):
     """Algoritmo de busqueda tabu."""
 
-    # COMPLETAR
+    def solve(self, problem: OptProblem):
+        """Resuelve un problema de optimizacion con busqueda tabu.
+
+        Argumentos:
+        ==========
+        problem: OptProblem
+            un problema de optimizacion
+        """
+        # Inicio del reloj
+        start = time()
+
+        # Arrancamos del estado inicial
+        actual = problem.init
+        value = problem.obj_val(problem.init)
+
+        mejor = actual # Se inicia el mejor como el estado inicial
+
+        lista_tabu = []
+
+        while self.niters < 50: # Elijo máximo de iteraciones como criterio de parada
+
+            # Determinar las acciones que se pueden aplicar
+            # y las diferencias en valor objetivo que resultan
+            diff = problem.val_diff(actual)         # Veo cuales son todas las posibles diferencias que se generan
+
+            max_diff = max(diff.values())           # Defino cual es la mayor diferencia de valor objetivo que se puede lograr, aplicando algunas de las acciones disponibles
+
+            # Buscar las acciones que generan el mayor incremento de valor obj Y NO ESTEN EN LISTA TABU
+            max_acts = [act for act, val in diff.items() if val == max_diff and act not in lista_tabu] 
+            
+            if not max_acts:
+                max_acts = [act for act, val in diff.items() if val == max_diff]    # Si no hay acciones que mejoren el Valor Objetivo
+            
+            act = choice(max_acts) # Si no existe ninguno que no esté en la lista tabu agarra alguno que maximice
+
+            if problem.obj_val(mejor) < problem.obj_val(actual): # Si el actual es mejor que el mejor lo actualizamos
+                mejor = actual
+
+            lista_tabu.append(act) # Actualizo lista tabu
+
+            if len(lista_tabu) > 10: # Limite de tamaño de lista tabu
+                lista_tabu.pop(0)
+
+            # Retornar si estamos en un optimo local 
+            # (diferencia de valor objetivo no positiva)
+            if max_diff <= 0:
+                end = time()
+                self.time = end - start
+                self.tour = actual
+                self.value = value
+                return
+            
+            # Sino, nos movemos al sucesor
+            else:
+                actual = problem.result(actual, act)
+                value = value + diff[act]
+                self.niters += 1
