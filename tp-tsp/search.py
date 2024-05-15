@@ -134,18 +134,15 @@ class HillClimbingReset(LocalSearch):
         self.time = end-start
         return
 
- 
-
 class Tabu(LocalSearch):
     """Algoritmo de busqueda tabu."""
 
     def solve(self, problem: OptProblem):
         """Resuelve un problema de optimizacion con busqueda tabu.
 
-        Argumentos:
-        ==========
-        problem: OptProblem
-            un problema de optimizacion
+        Se mueve siempre al sucesor con mejor valor objetivo, sea mejor, peor o igual que el actual.
+        Mantiene una memoria de corto plazo con información de las últimas iteraciones que le 
+        permite evitar estados visitados recientemente
         """
         # Inicio del reloj
         start = time()
@@ -158,7 +155,7 @@ class Tabu(LocalSearch):
 
         lista_tabu = []
 
-        while self.niters < 50: # Elijo máximo de iteraciones como criterio de parada
+        while self.niters < 20: # Elijo máximo de iteraciones como criterio de parada
 
             # Determinar las acciones que se pueden aplicar
             # y las diferencias en valor objetivo que resultan
@@ -167,32 +164,40 @@ class Tabu(LocalSearch):
             max_diff = max(diff.values())           # Defino cual es la mayor diferencia de valor objetivo que se puede lograr, aplicando algunas de las acciones disponibles
 
             # Buscar las acciones que generan el mayor incremento de valor obj Y NO ESTEN EN LISTA TABU
-            max_acts = [act for act, val in diff.items() if val == max_diff and act not in lista_tabu] 
+            max_acts = [act for act, val in diff.items() if val == max_diff and (act, actual) not in lista_tabu] 
             
             if not max_acts:
-                max_acts = [act for act, val in diff.items() if val == max_diff]    # Si no hay acciones que mejoren el Valor Objetivo
+                break#max_acts = [act for act, val in diff.items() if val == max_diff]    # Si no hay acciones que mejoren el Valor Objetivo
             
-            act = choice(max_acts) # Si no existe ninguno que no esté en la lista tabu agarra alguno que maximice
-
-            if problem.obj_val(mejor) < problem.obj_val(actual): # Si el actual es mejor que el mejor lo actualizamos
-                mejor = actual
-
-            lista_tabu.append(act) # Actualizo lista tabu
-
-            if len(lista_tabu) > 10: # Limite de tamaño de lista tabu
-                lista_tabu.pop(0)
+            act = max_acts[0] # Siempre la primera accion de max_acts (mejor valor obj que no esté en tabu)
 
             # Retornar si estamos en un optimo local 
             # (diferencia de valor objetivo no positiva)
             if max_diff <= 0:
+                #break #termina si no hay mejora
                 end = time()
                 self.time = end - start
                 self.tour = actual
                 self.value = value
                 return
-            
+            #actual = problem.result(actual, act)
+            #value += diff[act]
+            #self.niters += 1
             # Sino, nos movemos al sucesor
             else:
                 actual = problem.result(actual, act)
                 value = value + diff[act]
                 self.niters += 1
+
+            if problem.obj_val(mejor) < problem.obj_val(actual): # Si el actual es mejor que el mejor lo actualizamos
+                mejor = actual
+
+            lista_tabu.append((act, actual)) # Actualizo lista tabu
+
+            if len(lista_tabu) > 10: # Limite de tamaño de lista tabu
+                lista_tabu.pop(0)
+
+        """end = time()
+        self.time = end - start
+        self.tour = mejor  # Actualizar con el mejor estado encontrado
+        self.value = problem.obj_val(mejor)"""
