@@ -137,7 +137,7 @@ class HillClimbingReset(LocalSearch):
 class Tabu(LocalSearch):
     """Algoritmo de busqueda tabu."""
 
-    def solve(self, problem: OptProblem, max_iter : int = 500):
+    def solve(self, problem: OptProblem, max_iter : int = 200):
         """Resuelve un problema de optimizacion con busqueda tabu.
 
         Se mueve siempre al sucesor con mejor valor objetivo, sea mejor, peor o igual que el actual.
@@ -158,7 +158,7 @@ class Tabu(LocalSearch):
         iter_sin_mej = 0 # Iterador para contar las veces que no hay mejoras
 
         while iter_sin_mej < max_iter: # Elijo máximo de iteraciones como criterio de parada
-
+            
             # Determinar las acciones que se pueden aplicar
             # y las diferencias en valor objetivo que resultan
 
@@ -186,7 +186,11 @@ class Tabu(LocalSearch):
             if problem.obj_val(mejor) < problem.obj_val(actual): # Si el actual es mejor que el mejor lo actualizamos
                 mejor = actual
                 iter_sin_mej = 0 # Reset de contador  
-                # falta un continue, y hay que agregar algunas cosas aca, 1 es que sume el niters, y creo que moverse tambien
+                
+                #self.niters += 1
+                #actual = problem.result(actual, act) 
+                #value = value + diff_actualizado[act]
+                #continue
 
             iter_sin_mej +=1 # Actualizamos el iterador
 
