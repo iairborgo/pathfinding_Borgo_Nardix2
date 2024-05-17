@@ -153,57 +153,58 @@ class Tabu(LocalSearch):
 
         mejor = actual # Se inicia el mejor como el estado inicial
 
-        lista_tabu = []
+        lista_tabu = [] # Se crea la lista tabú vacía
 
-        iter = 0 # Defino un iterador para contar y resetear en while
+        iter_sin_mej = 0 # Iterador para contar las veces que no hay mejoras
 
-        while iter < max_iter: # Elijo máximo de iteraciones como criterio de parada
-
-            
+        while iter_sin_mej < max_iter: # Elijo máximo de iteraciones como criterio de parada
 
             # Determinar las acciones que se pueden aplicar
             # y las diferencias en valor objetivo que resultan
-            diff = problem.val_diff(actual)        # Veo cuales son todas las posibles diferencias que se generan
 
-## Eliminar aca las acciones que estan en lista tabu
-
-            max_diff = max(diff.values())           # Defino cual es la mayor diferencia de valor objetivo que se puede lograr, aplicando algunas de las acciones disponibles
+            diff = problem.val_diff(actual)        # Vemos cuales son todas las posibles diferencias que se generan
+            
+            diff_actualizado = {} # Creamos un nuevo diccionario donde agregamos acciones que no sean tabú
+            for accion, val in diff.items():
+                if accion not in lista_tabu:
+                    diff_actualizado[accion] = val
+            max_diff = max(diff_actualizado.values()) # Definimos cual es la mayor diferencia de valor objetivo que se puede lograr, aplicando algunas de las acciones disponibles
 
             # Buscar las acciones que generan el mayor incremento de valor obj Y NO ESTEN EN LISTA TABU
 
-            max_acts = [act for act, val in diff.items() if val == max_diff] 
-                
+            max_acts = [] # Creamos una lista con los mayores valores objetivo
+            for act, val in diff_actualizado.items():
+                if val == max_diff:
+                    max_acts.append(act)
+
             if not max_acts:
-                max_acts = [act for act, val in diff.items() if val == max_diff]    # Si no hay acciones que mejoren el Valor Objetivo
-                
-            act = max_acts[0] # Siempre la primera accion de max_acts (mejor valor obj que no esté en tabu)
+                break    # Si no hay acciones que mejoren el Valor Objetivo
+            
+            # Elegir una accion aleatoria
+            act = choice(max_acts)       
 
             if problem.obj_val(mejor) < problem.obj_val(actual): # Si el actual es mejor que el mejor lo actualizamos
                 mejor = actual
-                iter = 0 # Reset de contador
+                iter_sin_mej = 0 # Reset de contador  
+                # falta un continue, y hay que agregar algunas cosas aca, 1 es que sume el niters, y creo que moverse tambien
 
-            iter +=1 # Actualizo el iterador
+            iter_sin_mej +=1 # Actualizamos el iterador
 
-
-            lista_tabu.append(act) # Actualizo lista tabu
+            lista_tabu.append(act) # Actualizamos lista tabu
 
             if len(lista_tabu) > 20: # Limite de tamaño de lista tabu
                 lista_tabu.pop(0)
         
             # Estamos en un optimo local 
             # (diferencia de valor objetivo no positiva)
-            if max_diff <= 0:
-                self.tour = actual
-                self.value = value
-                
-            # Sino, nos movemos al sucesor
-            else:
-                actual = problem.result(actual, act)
-                value = value + diff[act]
-                self.niters += 1
 
+            actual = problem.result(actual, act) 
+            value = value + diff_actualizado[act] 
+            self.niters += 1 # Actualizamos el contador de iteraciones totales
 
-
+        self.tour = mejor 
+        self.value = problem.obj_val(mejor)  
         end = time()
         self.time = end - start
         return
+    
